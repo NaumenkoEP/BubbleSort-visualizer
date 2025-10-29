@@ -1,0 +1,69 @@
+import tkinter as tk
+from tkinter import messagebox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+class SortingVisualizer:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Sorting Visualizer")
+        
+        self.controls_frame = tk.Frame(root)
+        self.controls_frame.pack(side=tk.TOP, anchor="w", padx=10, pady=10)
+        
+        tk.Label(self.controls_frame, text="Enter elements:").pack(side=tk.LEFT)
+        self.elements_entry = tk.Entry(self.controls_frame)
+        self.elements_entry.pack(side=tk.LEFT, padx=5)
+        
+        self.start_button = tk.Button(self.controls_frame, text="Start", command=self.start_sorting)
+        self.start_button.pack(side=tk.LEFT, padx=5)
+        
+        self.fig, self.ax = plt.subplots()
+        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        self.data = []
+        self.anim = None
+        
+    def get_input(self):
+        try:
+            elements = list(map(int, self.elements_entry.get().split()))
+            if not elements:
+                raise ValueError("Please enter at least two numbers.")
+            return elements
+        except ValueError as e:
+            messagebox.showerror("Input Error", str(e))
+            return None
+    
+    def draw_bars(self, data, highlight=[]):
+        self.ax.clear()
+        colors = ["red" if i in highlight else "green" for i in range(len(data))]
+        self.ax.bar(range(len(data)), data, color=colors)
+        self.ax.set_ylim(0, max(data) + 5)
+        self.canvas.draw()
+    
+    def bubble_sort(self, data):
+        n = len(data)
+        for i in range(n):
+            for j in range(n - i - 1):
+                yield data, [j, j + 1]
+                if data[j] > data[j + 1]:
+                    data[j], data[j + 1] = data[j + 1], data[j]
+        yield data, []
+    
+    def start_sorting(self):
+        self.data = self.get_input()
+        if self.data is None:
+            return
+        
+        self.anim = animation.FuncAnimation(
+            self.fig, lambda frame: self.draw_bars(*frame),
+            frames=self.bubble_sort(self.data), interval=500, repeat=False
+        )
+        self.canvas.draw()
+        
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SortingVisualizer(root)
+    root.mainloop()
